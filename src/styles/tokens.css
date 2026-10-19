@@ -1,0 +1,59 @@
+:root {
+  /* Colour — only #4382DF (blue) and #AACCD6 (ice), plus tints/shades of them */
+  --bg: #eef5f8;
+  --bg-elevated: #e3eef2;
+  --surface: #fafcfd;
+  --surface-light: #d4e6ec;
+  --border: #c2dae1;
+  --border-strong: #aaccd6;
+  --text: #0f2547;
+  --muted: #45607f;
+  --accent: #4382df;
+  --on-accent: #ffffff;
+  --sage: #aaccd6;
+  --teal: #aaccd6;
+  --slate: #4382df;
+  --accent-hover: #2f6fcc;
+  --accent-light: #2a63bd;
+  --accent-soft: rgba(67, 130, 223, 0.13);
+  --grad: linear-gradient(120deg, #4382df 0%, #6fa3e8 55%, #aaccd6 100%);
+  --star: #f5a524;
+  --navy: #0b2559;
+  --navy-2: #123273;
+  --amber: #f5a524;
+  --amber-hover: #ffb93d;
+  --success: #1f9d6b;
+  --warning: #b8741f;
+  --danger: #d0453f;
+
+  /* Typography */
+  --font: 'Manrope', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  /* Shape & depth */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow: 0 8px 24px rgba(15, 37, 71, 0.10);
+  --shadow-lg: 0 24px 60px rgba(15, 37, 71, 0.22);
+
+  /* Layout */
+  --container: 1200px;
+  --gutter: clamp(16px, 4vw, 32px);
+  --nav-h: 68px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 0.16s;
+}
