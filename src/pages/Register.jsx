@@ -1,60 +1,51 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Button from '../components/Button'
 import SocialButtons from '../components/SocialButtons'
-import { useToast } from '../context/ToastContext'
-import { useAuth } from '../context/AuthContext'
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+import Icon from '../components/Icon'
 
 export default function Register() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
-  const [errors, setErrors] = useState({})
-  const { showToast } = useToast()
-  const { register } = useAuth()
   const navigate = useNavigate()
 
-  const update = (key) => (event) => setForm({ ...form, [key]: event.target.value })
-
-  const submit = (event) => {
-    event.preventDefault()
-    const next = {}
-    if (form.name.trim().length < 2) next.name = 'Please enter your name.'
-    if (!emailPattern.test(form.email)) next.email = 'Enter a valid email address.'
-    if (form.password.length < 8) next.password = 'Use at least 8 characters.'
-    if (form.confirm !== form.password) next.confirm = 'Passwords do not match.'
-    setErrors(next)
-    if (Object.keys(next).length) return
-    register({ name: form.name, email: form.email })
-    navigate('/')
-  }
-
-  const fields = [
-    ['name', 'Name', 'text', 'name', 'Your full name'],
-    ['email', 'Email', 'email', 'email', 'you@example.com'],
-    ['password', 'Password', 'password', 'new-password', 'At least 8 characters'],
-    ['confirm', 'Confirm password', 'password', 'new-password', 'Repeat your password'],
-  ]
-
   return (
-    <div className="auth-card">
-      <h1>Create your account</h1>
-      <p className="muted">Join the community and help others buy better.</p>
-      <SocialButtons />
-      <p className="auth-divider"><span>or with email</span></p>
+    <div className="google-only-card">
+      <div className="auth-card-header">
+        <div className="auth-badge">
+          <Icon name="sparkle" size={15} />
+          <span>Join the Community</span>
+        </div>
+        <h1>Create your Worthly account</h1>
+        <p className="muted">
+          Join thousands of smart shoppers using AI summaries and honest community reviews to buy better.
+        </p>
+      </div>
 
-      <form className="stack" onSubmit={submit} noValidate>
-        {fields.map(([key, label, type, autoComplete, placeholder]) => (
-          <div className="field" key={key}>
-            <label className="field-label" htmlFor={`reg-${key}`}>{label}</label>
-            <input id={`reg-${key}`} type={type} autoComplete={autoComplete} value={form[key]} onChange={update(key)} placeholder={placeholder} aria-invalid={Boolean(errors[key])} />
-            {errors[key] && <p className="field-error" role="alert">{errors[key]}</p>}
-          </div>
-        ))}
-        <Button type="submit" size="lg" block>Create Account</Button>
-      </form>
+      <SocialButtons onSignedIn={() => navigate('/')} />
 
-      <p className="auth-switch">Already have an account? <Link to="/login" className="text-link">Sign in</Link></p>
+      <div className="auth-features-list">
+        <div className="auth-feature-item">
+          <span className="auth-feature-check">✓</span>
+          <span>Fast setup with your verified Google account</span>
+        </div>
+        <div className="auth-feature-item">
+          <span className="auth-feature-check">✓</span>
+          <span>Personalized product recommendations</span>
+        </div>
+        <div className="auth-feature-item">
+          <span className="auth-feature-check">✓</span>
+          <span>Track prices and compare features side-by-side</span>
+        </div>
+      </div>
+
+      <p className="auth-disclaimer">
+        By continuing with Google, you agree to Worthly’s{' '}
+        <span className="text-link">Terms of Service</span> and{' '}
+        <span className="text-link">Privacy Policy</span>.
+      </p>
+
+      <div className="auth-footer-link">
+        <Link to="/" className="text-link">
+          ← Return to browsing products
+        </Link>
+      </div>
     </div>
   )
 }

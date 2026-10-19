@@ -261,52 +261,115 @@
 .auth-card { width: min(420px, 100%); display: grid; gap: 10px; animation: page-in 0.32s var(--ease) both; }
 .auth-card h1 { font-size: 2rem; }
 .auth-card form { margin-top: 4px; }
-.social-row { display: flex; flex-direction: column; width: 100%; margin-top: 14px; gap: 10px; }
-.google-auth-btn {
+.google-only-card {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 30px;
+  box-shadow: 0 16px 40px rgba(15, 37, 71, 0.08);
+  animation: page-in 0.32s var(--ease) both;
+}
+.auth-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.auth-card-header h1 {
+  font-size: 1.85rem;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 4px 12px;
+  background: rgba(67, 130, 223, 0.12);
+  color: var(--accent-light);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.google-auth-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.google-sso-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  min-height: 46px;
-  padding: 10px 18px;
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border-strong);
+  min-height: 52px;
+  padding: 12px 20px;
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
   border-radius: var(--radius);
+  font-size: 15px;
   font-weight: 600;
-  font-size: var(--fs-sm);
   cursor: pointer;
   transition: all var(--fast);
-  box-shadow: 0 1px 3px rgba(15, 37, 71, 0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
-.google-auth-btn:hover {
-  background: var(--surface-light);
-  border-color: var(--accent-light);
-  box-shadow: 0 4px 12px rgba(67, 130, 223, 0.12);
+.google-sso-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
   transform: translateY(-1px);
 }
-.google-icon-svg { flex: none; width: 20px; height: 20px; }
-.google-account-picker { display: grid; gap: 12px; }
-.google-account-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
+.google-sso-btn:active {
+  transform: translateY(1px);
+}
+.google-sso-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+.auth-features-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--surface-light);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface-light);
-  cursor: pointer;
-  transition: all var(--fast);
-  text-align: left;
 }
-.google-account-item:hover { border-color: var(--accent); background: var(--accent-soft); }
-.google-modal-note { font-size: var(--fs-xs); color: var(--muted); margin-top: 10px; line-height: 1.5; }
-.auth-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: var(--fs-xs); margin-block: 8px; }
-.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.auth-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.auth-row .link-btn { margin: 0; }
-.auth-switch { text-align: center; color: var(--muted); font-size: var(--fs-sm); margin-top: 10px; }
+.auth-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+.auth-feature-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(31, 157, 107, 0.14);
+  color: var(--success);
+  font-weight: 800;
+  font-size: 11px;
+  flex: none;
+}
+.auth-disclaimer {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+}
+.auth-footer-link {
+  text-align: center;
+  margin-top: 2px;
+}
 
 /* ---------- Admin ---------- */
 .admin-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }

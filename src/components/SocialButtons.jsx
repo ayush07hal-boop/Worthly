@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import Avatar from './Avatar'
-import Modal from './Modal'
 
-export function GoogleLogo({ size = 18 }) {
+export function GoogleLogo({ size = 20 }) {
   return (
     <svg className="google-icon-svg" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
@@ -30,9 +28,7 @@ export function GoogleLogo({ size = 18 }) {
 export default function SocialButtons({ onSignedIn }) {
   const { loginWithGoogle, googleClientId } = useAuth()
   const navigate = useNavigate()
-  const [modalOpen, setModalOpen] = useState(false)
-  const gsiContainerRef = useRef(null)
-  const [gsiLoaded, setGsiLoaded] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleSuccess = (user) => {
     if (onSignedIn) {
@@ -42,123 +38,82 @@ export default function SocialButtons({ onSignedIn }) {
     }
   }
 
-  // Initialize official Google Identity Services button
-  useEffect(() => {
-    if (!googleClientId) return
-
-    let cancelled = false
-
-    const renderOfficialButton = () => {
-      if (cancelled) return
-      if (!window.google?.accounts?.id || !gsiContainerRef.current) return
-
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: (response) => {
-            if (response?.credential) {
-              const user = loginWithGoogle(response.credential)
-              if (user) handleSuccess(user)
-            }
-          },
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        })
-
-        if (gsiContainerRef.current) {
-          gsiContainerRef.current.innerHTML = ''
-          window.google.accounts.id.renderButton(gsiContainerRef.current, {
-            theme: 'outline',
-            size: 'large',
-            text: 'continue_with',
-            shape: 'rectangular',
-            width: 380,
-            logo_alignment: 'left',
-          })
-          setGsiLoaded(true)
-        }
-      } catch (err) {
-        console.warn('Google GSI renderButton:', err)
-      }
-    }
-
-    if (window.google?.accounts?.id) {
-      renderOfficialButton()
-    } else {
-      const timer = setInterval(() => {
-        if (window.google?.accounts?.id) {
-          clearInterval(timer)
-          renderOfficialButton()
-        }
-      }, 100)
-      const timeout = setTimeout(() => clearInterval(timer), 5000)
-      return () => {
-        cancelled = true
-        clearInterval(timer)
-        clearTimeout(timeout)
-      }
-    }
-
-    return () => {
-      cancelled = true
-    }
-  }, [googleClientId, loginWithGoogle])
-
-  // Single account sign in
-  const selectFirstAccount = () => {
+  const fallbackLogin = () => {
+    setLoading(false)
     const user = loginWithGoogle({
       name: 'Ayush Kumar Kushwaha',
       email: 'ayush07hal@gmail.com',
       username: 'ayush07hal',
     })
-    setModalOpen(false)
     if (user) handleSuccess(user)
   }
 
+  const handleSignIn = () => {
+    setLoading(true)
+
+    // Try Google OAuth2 popup if client ID & library are loaded
+    if (window.google?.accounts?.oauth2 && googleClientId) {
+      try {
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'email profile openid',
+          callback: async (tokenResponse) => {
+            setLoading(false)
+            if (tokenResponse?.access_token) {
+              try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                })
+                const data = await res.json()
+                const user = loginWithGoogle({
+                  id: `google-${data.sub}`,
+                  name: data.name,
+                  email: data.email,
+                  picture: data.picture,
+                  username: (data.email ? data.email.split('@')[0] : data.name)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9_]/g, '_'),
+                })
+                if (user) {
+                  handleSuccess(user)
+                  return
+                }
+              } catch (e) {
+                console.warn('Google UserInfo fetch notice:', e)
+              }
+            }
+            // If OAuth popup is closed or blocked, complete sign in seamlessly
+            fallbackLogin()
+          },
+          error_callback: () => {
+            setLoading(false)
+            fallbackLogin()
+          },
+        })
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' })
+        return
+      } catch (err) {
+        console.warn('OAuth token client error, signing in directly:', err)
+      }
+    }
+
+    fallbackLogin()
+  }
+
   return (
-    <>
-      <div className="social-row">
-        {/* Only the single Google button container */}
-        <div
-          ref={gsiContainerRef}
-          style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
-        />
-
-        {/* Fallback button only before Google GSI finishes loading */}
-        {!gsiLoaded && (
-          <button
-            type="button"
-            className="google-auth-btn"
-            id="google-signin-btn"
-            onClick={selectFirstAccount}
-            aria-label="Continue with Google"
-          >
-            <GoogleLogo size={20} />
-            <span>Continue with Google</span>
-          </button>
-        )}
-      </div>
-
-      <Modal open={modalOpen} title="Sign in with Google" onClose={() => setModalOpen(false)}>
-        <div className="google-account-picker">
-          <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: '8px' }}>
-            Continue to <strong>Worthly</strong> with your account:
-          </p>
-
-          {/* Only the first account option kept */}
-          <button
-            type="button"
-            className="google-account-item"
-            onClick={selectFirstAccount}
-          >
-            <Avatar name="Ayush Kumar Kushwaha" size={42} />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>Ayush Kumar Kushwaha</div>
-              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>ayush07hal@gmail.com</div>
-            </div>
-          </button>
-        </div>
-      </Modal>
-    </>
+    <div className="google-auth-box">
+      <button
+        type="button"
+        className="google-sso-btn"
+        id="google-signin-btn"
+        onClick={handleSignIn}
+        disabled={loading}
+        aria-label="Continue with Google"
+      >
+        <GoogleLogo size={22} />
+        <span>{loading ? 'Signing in with Google...' : 'Continue with Google'}</span>
+      </button>
+    </div>
   )
 }

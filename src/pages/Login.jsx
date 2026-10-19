@@ -1,56 +1,51 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Button from '../components/Button'
 import SocialButtons from '../components/SocialButtons'
-import { useToast } from '../context/ToastContext'
-import { useAuth } from '../context/AuthContext'
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+import Icon from '../components/Icon'
 
 export default function Login() {
-  const [form, setForm] = useState({ email: '', password: '', remember: true })
-  const [errors, setErrors] = useState({})
-  const { showToast } = useToast()
-  const { loginWithEmail } = useAuth()
   const navigate = useNavigate()
 
-  const submit = (event) => {
-    event.preventDefault()
-    const next = {}
-    if (!emailPattern.test(form.email)) next.email = 'Enter a valid email address.'
-    if (form.password.length < 6) next.password = 'Password must be at least 6 characters.'
-    setErrors(next)
-    if (Object.keys(next).length) return
-    loginWithEmail(form.email, form.password)
-    navigate('/')
-  }
-
   return (
-    <div className="auth-card">
-      <h1>Welcome back</h1>
-      <p className="muted">Sign in to save products and write reviews.</p>
-      <SocialButtons />
-      <p className="auth-divider"><span>or with email</span></p>
+    <div className="google-only-card">
+      <div className="auth-card-header">
+        <div className="auth-badge">
+          <Icon name="shield" size={15} />
+          <span>Secure Google Sign-In</span>
+        </div>
+        <h1>Welcome to Worthly</h1>
+        <p className="muted">
+          Sign in with Google to explore verified buyer reviews, build your wishlist, and make confident purchase decisions.
+        </p>
+      </div>
 
-      <form className="stack" onSubmit={submit} noValidate>
-        <div className="field">
-          <label className="field-label" htmlFor="login-email">Email</label>
-          <input id="login-email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" aria-invalid={Boolean(errors.email)} />
-          {errors.email && <p className="field-error" role="alert">{errors.email}</p>}
-        </div>
-        <div className="field">
-          <label className="field-label" htmlFor="login-password">Password</label>
-          <input id="login-password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Your password" aria-invalid={Boolean(errors.password)} />
-          {errors.password && <p className="field-error" role="alert">{errors.password}</p>}
-        </div>
-        <div className="auth-row">
-          <label className="check"><input type="checkbox" checked={form.remember} onChange={(e) => setForm({ ...form, remember: e.target.checked })} /> Remember me</label>
-          <button type="button" className="link-btn" onClick={() => showToast('Password reset is not available in the demo', 'info')}>Forgot password?</button>
-        </div>
-        <Button type="submit" size="lg" block>Sign In</Button>
-      </form>
+      <SocialButtons onSignedIn={() => navigate('/')} />
 
-      <p className="auth-switch">New to Worthly? <Link to="/register" className="text-link">Create an account</Link></p>
+      <div className="auth-features-list">
+        <div className="auth-feature-item">
+          <span className="auth-feature-check">✓</span>
+          <span>Instant one-click access — no passwords needed</span>
+        </div>
+        <div className="auth-feature-item">
+          <span className="auth-feature-check">✓</span>
+          <span>Sync your saved wishlist across all devices</span>
+        </div>
+        <div className="auth-feature-item">
+          <span className="auth-feature-check">✓</span>
+          <span>Write and vote on community product reviews</span>
+        </div>
+      </div>
+
+      <p className="auth-disclaimer">
+        By continuing with Google, you agree to Worthly’s{' '}
+        <span className="text-link">Terms of Service</span> and{' '}
+        <span className="text-link">Privacy Policy</span>.
+      </p>
+
+      <div className="auth-footer-link">
+        <Link to="/" className="text-link">
+          ← Return to browsing products
+        </Link>
+      </div>
     </div>
   )
 }

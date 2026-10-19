@@ -69,10 +69,7 @@ export default function Navbar() {
               <Button variant="ghost" size="sm" className="nav-auth" onClick={logout}>Sign Out</Button>
             </>
           ) : (
-            <>
-              <Button to="/login" variant="ghost" size="sm" className="nav-auth">Sign In</Button>
-              <Button to="/register" size="sm" className="nav-auth">Sign Up</Button>
-            </>
+            <Button to="/login" size="sm" className="nav-auth">Sign In</Button>
           )}
           <button
             type="button"
@@ -109,10 +106,7 @@ export default function Navbar() {
                 <Button variant="secondary" block onClick={() => { logout(); setOpen(false) }}>Sign Out</Button>
               </>
             ) : (
-              <>
-                <Button to="/login" variant="secondary" block>Sign In</Button>
-                <Button to="/register" block>Sign Up</Button>
-              </>
+              <Button to="/login" block onClick={() => setOpen(false)}>Sign In with Google</Button>
             )}
           </div>
         </nav>
