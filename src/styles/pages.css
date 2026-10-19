@@ -261,8 +261,47 @@
 .auth-card { width: min(420px, 100%); display: grid; gap: 10px; animation: page-in 0.32s var(--ease) both; }
 .auth-card h1 { font-size: 2rem; }
 .auth-card form { margin-top: 4px; }
-.social-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-.social-mark { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-light); font-size: 11px; font-weight: 800; }
+.social-row { display: flex; flex-direction: column; width: 100%; margin-top: 14px; gap: 10px; }
+.google-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 18px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: all var(--fast);
+  box-shadow: 0 1px 3px rgba(15, 37, 71, 0.05);
+}
+.google-auth-btn:hover {
+  background: var(--surface-light);
+  border-color: var(--accent-light);
+  box-shadow: 0 4px 12px rgba(67, 130, 223, 0.12);
+  transform: translateY(-1px);
+}
+.google-icon-svg { flex: none; width: 20px; height: 20px; }
+.google-account-picker { display: grid; gap: 12px; }
+.google-account-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-light);
+  cursor: pointer;
+  transition: all var(--fast);
+  text-align: left;
+}
+.google-account-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.google-modal-note { font-size: var(--fs-xs); color: var(--muted); margin-top: 10px; line-height: 1.5; }
 .auth-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: var(--fs-xs); margin-block: 8px; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .auth-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

@@ -4,6 +4,7 @@ import ReviewForm from './ReviewForm'
 import SortDropdown from './SortDropdown'
 import { Stars } from './Rating'
 import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
 import { currentUser } from '../data/users'
 import { getRatingDistribution, REVIEW_SORT_OPTIONS, sortReviews } from '../services/reviewService'
 
@@ -12,16 +13,18 @@ export default function ReviewSection({ product }) {
   const [sortBy, setSortBy] = useState('helpful')
   const [added, setAdded] = useState([])
   const { showToast } = useToast()
+  const { user } = useAuth()
 
   const all = useMemo(() => [...added, ...product.reviews], [added, product.reviews])
   const sorted = useMemo(() => sortReviews(all, sortBy), [all, sortBy])
   const distribution = getRatingDistribution(all)
 
   const submitReview = (data) => {
+    const activeUserId = user?.id || currentUser.id
     const review = {
       id: `${product.id}-new-${Date.now()}`,
       productId: product.id,
-      userId: currentUser.id,
+      userId: activeUserId,
       date: new Date().toISOString().slice(0, 10),
       helpful: 0,
       comments: 0,

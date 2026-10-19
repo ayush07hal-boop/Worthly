@@ -3,7 +3,9 @@ import { NavLink, useLocation } from 'react-router-dom'
 import Logo from './Logo'
 import Icon from './Icon'
 import Button from './Button'
+import Avatar from './Avatar'
 import { useWishlist } from '../context/WishlistContext'
+import { useAuth } from '../context/AuthContext'
 
 const links = [
   { to: '/products', label: 'Discover' },
@@ -16,6 +18,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const { pathname } = useLocation()
   const { ids } = useWishlist()
+  const { user, logout } = useAuth()
 
   useEffect(() => setOpen(false), [pathname])
 
@@ -57,8 +60,20 @@ export default function Navbar() {
             <Icon name="heart" size={19} />
             {ids.length > 0 && <span className="nav-count">{ids.length}</span>}
           </NavLink>
-          <Button to="/login" variant="ghost" size="sm" className="nav-auth">Sign In</Button>
-          <Button to="/register" size="sm" className="nav-auth">Sign Up</Button>
+          {user ? (
+            <>
+              <NavLink to={`/profile/${user.id}`} className="nav-user-pill" title={`Signed in as ${user.name}`}>
+                <Avatar name={user.name} src={user.picture} size={28} />
+                <span className="nav-user-name">{user.name.split(' ')[0]}</span>
+              </NavLink>
+              <Button variant="ghost" size="sm" className="nav-auth" onClick={logout}>Sign Out</Button>
+            </>
+          ) : (
+            <>
+              <Button to="/login" variant="ghost" size="sm" className="nav-auth">Sign In</Button>
+              <Button to="/register" size="sm" className="nav-auth">Sign Up</Button>
+            </>
+          )}
           <button
             type="button"
             className="icon-btn nav-toggle"
@@ -80,8 +95,25 @@ export default function Navbar() {
             </NavLink>
           ))}
           <div className="mobile-auth">
-            <Button to="/login" variant="secondary" block>Sign In</Button>
-            <Button to="/register" block>Sign Up</Button>
+            {user ? (
+              <>
+                <NavLink to={`/profile/${user.id}`} className="mobile-link" style={{ border: 'none', padding: '8px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Avatar name={user.name} src={user.picture} size={36} />
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{user.name}</div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>{user.email || 'View Profile'}</div>
+                    </div>
+                  </div>
+                </NavLink>
+                <Button variant="secondary" block onClick={() => { logout(); setOpen(false) }}>Sign Out</Button>
+              </>
+            ) : (
+              <>
+                <Button to="/login" variant="secondary" block>Sign In</Button>
+                <Button to="/register" block>Sign Up</Button>
+              </>
+            )}
           </div>
         </nav>
       </div>

@@ -7,6 +7,7 @@ import EmptyState from '../components/EmptyState'
 import NotFound from './NotFound'
 import WishlistItem from '../components/WishlistItem'
 import { useWishlist } from '../context/WishlistContext'
+import { useAuth } from '../context/AuthContext'
 import { getUserById } from '../services/userService'
 import { getReviewsForUser } from '../services/reviewService'
 import { getProductsByIds } from '../services/productService'
@@ -14,13 +15,14 @@ import { currentUser } from '../data/users'
 
 export default function Profile() {
   const { id } = useParams()
+  const { user: authUser } = useAuth()
   const user = getUserById(id)
   const [tab, setTab] = useState('reviews')
   const { ids, toggleWishlist } = useWishlist()
 
   if (!user) return <NotFound />
 
-  const isMe = user.id === currentUser.id
+  const isMe = user.id === (authUser?.id || currentUser.id)
   const reviews = getReviewsForUser(user.id)
   // Wishlists are private: only the signed-in (mock) user sees saved items.
   const wishlist = isMe ? getProductsByIds(ids) : []
@@ -34,7 +36,7 @@ export default function Profile() {
   return (
     <div className="container profile">
       <header className="profile-head">
-        <Avatar name={user.username} size={84} />
+        <Avatar name={user.name || user.username} src={user.picture} size={84} />
         <div className="profile-id">
           <h1>{user.username}</h1>
           <p className="muted">{user.name} · Member since {user.memberSince}</p>

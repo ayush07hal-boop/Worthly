@@ -166,6 +166,14 @@ option { background: var(--surface); }
   border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 700;
 }
 .nav-wishlist.active { color: var(--text); }
+.nav-user-pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px;
+  background: var(--surface-light); border: 1px solid var(--border); border-radius: 999px;
+  font-size: var(--fs-sm); font-weight: 600; color: var(--text); text-decoration: none;
+  transition: all var(--fast);
+}
+.nav-user-pill:hover { background: var(--surface); border-color: var(--accent-light); }
+.nav-user-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-toggle { display: none; }
 
 .mobile-menu { position: fixed; inset: var(--nav-h) 0 0 0; background: rgba(238, 245, 248, 0.98); overflow-y: auto; }

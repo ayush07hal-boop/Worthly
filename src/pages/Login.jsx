@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import SocialButtons from '../components/SocialButtons'
 import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -10,6 +11,7 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '', remember: true })
   const [errors, setErrors] = useState({})
   const { showToast } = useToast()
+  const { loginWithEmail } = useAuth()
   const navigate = useNavigate()
 
   const submit = (event) => {
@@ -19,7 +21,7 @@ export default function Login() {
     if (form.password.length < 6) next.password = 'Password must be at least 6 characters.'
     setErrors(next)
     if (Object.keys(next).length) return
-    showToast('Signed in (demo only, no real authentication yet)')
+    loginWithEmail(form.email, form.password)
     navigate('/')
   }
 

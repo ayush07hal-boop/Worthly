@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import SocialButtons from '../components/SocialButtons'
 import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -10,6 +11,7 @@ export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [errors, setErrors] = useState({})
   const { showToast } = useToast()
+  const { register } = useAuth()
   const navigate = useNavigate()
 
   const update = (key) => (event) => setForm({ ...form, [key]: event.target.value })
@@ -23,7 +25,7 @@ export default function Register() {
     if (form.confirm !== form.password) next.confirm = 'Passwords do not match.'
     setErrors(next)
     if (Object.keys(next).length) return
-    showToast('Account created (demo only, no real authentication yet)')
+    register({ name: form.name, email: form.email })
     navigate('/')
   }
 
