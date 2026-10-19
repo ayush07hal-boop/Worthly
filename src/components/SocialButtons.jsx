@@ -32,9 +32,11 @@ export default function SocialButtons({ onSignedIn }) {
   const { loginWithGoogle, googleClientId } = useAuth()
   const navigate = useNavigate()
   const [modalOpen, setModalOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [customName, setCustomName] = useState('')
   const [customEmail, setCustomEmail] = useState('')
   const gsiContainerRef = useRef(null)
+  const [gsiReady, setGsiReady] = useState(false)
 
   const handleSuccess = (user) => {
     if (onSignedIn) {
@@ -44,9 +46,31 @@ export default function SocialButtons({ onSignedIn }) {
     }
   }
 
-  // If a real Google Client ID is configured, initialize Google Identity Services
+  // Poll for Google Identity Services script availability
   useEffect(() => {
-    if (!googleClientId || !window.google?.accounts?.id || !gsiContainerRef.current) return
+    if (typeof window === 'undefined') return
+    if (window.google?.accounts) {
+      setGsiReady(true)
+      return
+    }
+
+    const timer = setInterval(() => {
+      if (window.google?.accounts) {
+        setGsiReady(true)
+        clearInterval(timer)
+      }
+    }, 150)
+
+    const timeout = setTimeout(() => clearInterval(timer), 6000)
+    return () => {
+      clearInterval(timer)
+      clearTimeout(timeout)
+    }
+  }, [])
+
+  // Initialize GIS and render official button if container exists
+  useEffect(() => {
+    if (!gsiReady || !googleClientId || !window.google?.accounts?.id || !gsiContainerRef.current) return
 
     try {
       window.google.accounts.id.initialize({
@@ -57,6 +81,8 @@ export default function SocialButtons({ onSignedIn }) {
             if (user) handleSuccess(user)
           }
         },
+        auto_select: false,
+        cancel_on_tap_outside: true,
       })
 
       window.google.accounts.id.renderButton(gsiContainerRef.current, {
@@ -67,22 +93,73 @@ export default function SocialButtons({ onSignedIn }) {
         width: 380,
       })
     } catch (err) {
-      console.warn('Google Identity Services button render failed:', err)
+      console.warn('GSI renderButton notice:', err)
     }
-  }, [googleClientId, loginWithGoogle])
+  }, [gsiReady, googleClientId, loginWithGoogle])
 
   const handleGoogleClick = () => {
-    // If real GSI client ID is configured, prompt Google popup
-    if (googleClientId && window.google?.accounts?.id) {
+    // 1. Try Google OAuth 2.0 popup flow
+    if (window.google?.accounts?.oauth2 && googleClientId) {
+      try {
+        setLoading(true)
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'email profile openid',
+          callback: async (tokenResponse) => {
+            setLoading(false)
+            if (tokenResponse?.error) {
+              console.warn('Google OAuth token error:', tokenResponse)
+              setModalOpen(true)
+              return
+            }
+            if (tokenResponse?.access_token) {
+              try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                })
+                const data = await res.json()
+                const user = loginWithGoogle({
+                  id: `google-${data.sub}`,
+                  name: data.name,
+                  email: data.email,
+                  picture: data.picture,
+                  username: (data.email ? data.email.split('@')[0] : data.name)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9_]/g, '_'),
+                })
+                if (user) handleSuccess(user)
+              } catch (e) {
+                console.error('Failed fetching Google profile:', e)
+                setModalOpen(true)
+              }
+            }
+          },
+          error_callback: (err) => {
+            setLoading(false)
+            console.warn('Google OAuth popup error or blocked:', err)
+            setModalOpen(true)
+          },
+        })
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' })
+        return
+      } catch (err) {
+        setLoading(false)
+        console.warn('Google OAuth2 error, falling back to One-Tap/Modal:', err)
+      }
+    }
+
+    // 2. Try Google One-Tap prompt if available
+    if (window.google?.accounts?.id && googleClientId) {
       try {
         window.google.accounts.id.prompt()
         return
       } catch (e) {
-        console.warn('Google Identity Services prompt fallback:', e)
+        console.warn('Google Identity prompt notice:', e)
       }
     }
 
-    // Otherwise, open the interactive Google Account selector
+    // 3. Fallback to interactive Google account modal
     setModalOpen(true)
   }
 
@@ -105,26 +182,27 @@ export default function SocialButtons({ onSignedIn }) {
   return (
     <>
       <div className="social-row">
-        {googleClientId && <div ref={gsiContainerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }} />}
+        {/* Official Google GSI button if rendered */}
+        <div ref={gsiContainerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }} />
 
-        {(!googleClientId || !window.google?.accounts?.id) && (
-          <button
-            type="button"
-            className="google-auth-btn"
-            id="google-signin-btn"
-            onClick={handleGoogleClick}
-            aria-label="Continue with Google"
-          >
-            <GoogleLogo size={20} />
-            <span>Continue with Google</span>
-          </button>
-        )}
+        {/* Branded Google button */}
+        <button
+          type="button"
+          className="google-auth-btn"
+          id="google-signin-btn"
+          onClick={handleGoogleClick}
+          disabled={loading}
+          aria-label="Continue with Google"
+        >
+          <GoogleLogo size={20} />
+          <span>{loading ? 'Connecting with Google...' : 'Continue with Google'}</span>
+        </button>
       </div>
 
       <Modal open={modalOpen} title="Sign in with Google" onClose={() => setModalOpen(false)}>
         <div className="google-account-picker">
           <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: '8px' }}>
-            Choose a Google account to continue to <strong>Worthly</strong>
+            Choose an account to continue to <strong>Worthly</strong>
           </p>
 
           <button
@@ -151,11 +229,11 @@ export default function SocialButtons({ onSignedIn }) {
             </div>
           </button>
 
-          <p className="auth-divider"><span>or sign in with another Google account</span></p>
+          <p className="auth-divider"><span>or sign in with another Google email</span></p>
 
           <form onSubmit={handleCustomSubmit} className="stack">
             <div className="field">
-              <label className="field-label" htmlFor="g-name">Name</label>
+              <label className="field-label" htmlFor="g-name">Your Name</label>
               <input
                 id="g-name"
                 type="text"
@@ -175,13 +253,17 @@ export default function SocialButtons({ onSignedIn }) {
                 placeholder="name@gmail.com"
               />
             </div>
-            <Button type="submit" size="md" block>Sign in with Google Account</Button>
+            <Button type="submit" size="md" block>Sign in with Google</Button>
           </form>
 
-          <p className="google-modal-note">
-            💡 <strong>Google OAuth Setup</strong>: To connect live Google Cloud credentials, set{' '}
-            <code>VITE_GOOGLE_CLIENT_ID</code> in your <code>.env</code> file.
-          </p>
+          <div className="google-modal-note" style={{ background: 'var(--surface-light)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+            <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)' }}>
+              ⚙️ Google Cloud Console Origin Setup:
+            </p>
+            <p style={{ margin: 0 }}>
+              To enable live popup authentication for localhost, make sure <code>http://localhost:5173</code> is listed under <strong>Authorized JavaScript origins</strong> in your Google Cloud Console OAuth Client settings.
+            </p>
+          </div>
         </div>
       </Modal>
     </>

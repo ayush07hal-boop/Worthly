@@ -34,7 +34,9 @@ export function AuthProvider({ children }) {
     }
   })
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  const googleClientId =
+    import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    '888780566294-1avifbpb8imbaqqil6r0oibrprthqrfj.apps.googleusercontent.com'
 
   // Sync user state changes to localStorage
   useEffect(() => {
