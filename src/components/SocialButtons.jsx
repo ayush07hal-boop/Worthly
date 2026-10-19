@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import Modal from './Modal'
-import Button from './Button'
 
 export function GoogleLogo({ size = 18 }) {
   return (
@@ -32,11 +31,8 @@ export default function SocialButtons({ onSignedIn }) {
   const { loginWithGoogle, googleClientId } = useAuth()
   const navigate = useNavigate()
   const [modalOpen, setModalOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [customName, setCustomName] = useState('')
-  const [customEmail, setCustomEmail] = useState('')
   const gsiContainerRef = useRef(null)
-  const [gsiReady, setGsiReady] = useState(false)
+  const [gsiLoaded, setGsiLoaded] = useState(false)
 
   const handleSuccess = (user) => {
     if (onSignedIn) {
@@ -46,169 +42,114 @@ export default function SocialButtons({ onSignedIn }) {
     }
   }
 
-  // Poll for Google Identity Services script availability
+  // Initialize official Google Identity Services button
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (window.google?.accounts) {
-      setGsiReady(true)
-      return
-    }
+    if (!googleClientId) return
 
-    const timer = setInterval(() => {
-      if (window.google?.accounts) {
-        setGsiReady(true)
-        clearInterval(timer)
-      }
-    }, 150)
+    let cancelled = false
 
-    const timeout = setTimeout(() => clearInterval(timer), 6000)
-    return () => {
-      clearInterval(timer)
-      clearTimeout(timeout)
-    }
-  }, [])
+    const renderOfficialButton = () => {
+      if (cancelled) return
+      if (!window.google?.accounts?.id || !gsiContainerRef.current) return
 
-  // Initialize GIS and render official button if container exists
-  useEffect(() => {
-    if (!gsiReady || !googleClientId || !window.google?.accounts?.id || !gsiContainerRef.current) return
-
-    try {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: (response) => {
-          if (response?.credential) {
-            const user = loginWithGoogle(response.credential)
-            if (user) handleSuccess(user)
-          }
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      })
-
-      window.google.accounts.id.renderButton(gsiContainerRef.current, {
-        theme: 'outline',
-        size: 'large',
-        text: 'continue_with',
-        shape: 'rectangular',
-        width: 380,
-      })
-    } catch (err) {
-      console.warn('GSI renderButton notice:', err)
-    }
-  }, [gsiReady, googleClientId, loginWithGoogle])
-
-  const handleGoogleClick = () => {
-    // 1. Try Google OAuth 2.0 popup flow
-    if (window.google?.accounts?.oauth2 && googleClientId) {
       try {
-        setLoading(true)
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        window.google.accounts.id.initialize({
           client_id: googleClientId,
-          scope: 'email profile openid',
-          callback: async (tokenResponse) => {
-            setLoading(false)
-            if (tokenResponse?.error) {
-              console.warn('Google OAuth token error:', tokenResponse)
-              setModalOpen(true)
-              return
-            }
-            if (tokenResponse?.access_token) {
-              try {
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                })
-                const data = await res.json()
-                const user = loginWithGoogle({
-                  id: `google-${data.sub}`,
-                  name: data.name,
-                  email: data.email,
-                  picture: data.picture,
-                  username: (data.email ? data.email.split('@')[0] : data.name)
-                    .toLowerCase()
-                    .replace(/[^a-z0-9_]/g, '_'),
-                })
-                if (user) handleSuccess(user)
-              } catch (e) {
-                console.error('Failed fetching Google profile:', e)
-                setModalOpen(true)
-              }
+          callback: (response) => {
+            if (response?.credential) {
+              const user = loginWithGoogle(response.credential)
+              if (user) handleSuccess(user)
             }
           },
-          error_callback: (err) => {
-            setLoading(false)
-            console.warn('Google OAuth popup error or blocked:', err)
-            setModalOpen(true)
-          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
         })
 
-        tokenClient.requestAccessToken({ prompt: 'select_account' })
-        return
+        if (gsiContainerRef.current) {
+          gsiContainerRef.current.innerHTML = ''
+          window.google.accounts.id.renderButton(gsiContainerRef.current, {
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            width: 380,
+            logo_alignment: 'left',
+          })
+          setGsiLoaded(true)
+        }
       } catch (err) {
-        setLoading(false)
-        console.warn('Google OAuth2 error, falling back to One-Tap/Modal:', err)
+        console.warn('Google GSI renderButton:', err)
       }
     }
 
-    // 2. Try Google One-Tap prompt if available
-    if (window.google?.accounts?.id && googleClientId) {
-      try {
-        window.google.accounts.id.prompt()
-        return
-      } catch (e) {
-        console.warn('Google Identity prompt notice:', e)
+    if (window.google?.accounts?.id) {
+      renderOfficialButton()
+    } else {
+      const timer = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          clearInterval(timer)
+          renderOfficialButton()
+        }
+      }, 100)
+      const timeout = setTimeout(() => clearInterval(timer), 5000)
+      return () => {
+        cancelled = true
+        clearInterval(timer)
+        clearTimeout(timeout)
       }
     }
 
-    // 3. Fallback to interactive Google account modal
-    setModalOpen(true)
-  }
+    return () => {
+      cancelled = true
+    }
+  }, [googleClientId, loginWithGoogle])
 
-  const selectAccount = (name, email) => {
+  // Single account sign in
+  const selectFirstAccount = () => {
     const user = loginWithGoogle({
-      name,
-      email,
-      username: email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+      name: 'Ayush Kumar Kushwaha',
+      email: 'ayush07hal@gmail.com',
+      username: 'ayush07hal',
     })
     setModalOpen(false)
     if (user) handleSuccess(user)
   }
 
-  const handleCustomSubmit = (e) => {
-    e.preventDefault()
-    if (!customEmail.trim()) return
-    selectAccount(customName.trim() || 'Google User', customEmail.trim())
-  }
-
   return (
     <>
       <div className="social-row">
-        {/* Official Google GSI button if rendered */}
-        <div ref={gsiContainerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }} />
+        {/* Only the single Google button container */}
+        <div
+          ref={gsiContainerRef}
+          style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+        />
 
-        {/* Branded Google button */}
-        <button
-          type="button"
-          className="google-auth-btn"
-          id="google-signin-btn"
-          onClick={handleGoogleClick}
-          disabled={loading}
-          aria-label="Continue with Google"
-        >
-          <GoogleLogo size={20} />
-          <span>{loading ? 'Connecting with Google...' : 'Continue with Google'}</span>
-        </button>
+        {/* Fallback button only before Google GSI finishes loading */}
+        {!gsiLoaded && (
+          <button
+            type="button"
+            className="google-auth-btn"
+            id="google-signin-btn"
+            onClick={selectFirstAccount}
+            aria-label="Continue with Google"
+          >
+            <GoogleLogo size={20} />
+            <span>Continue with Google</span>
+          </button>
+        )}
       </div>
 
       <Modal open={modalOpen} title="Sign in with Google" onClose={() => setModalOpen(false)}>
         <div className="google-account-picker">
           <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: '8px' }}>
-            Choose an account to continue to <strong>Worthly</strong>
+            Continue to <strong>Worthly</strong> with your account:
           </p>
 
+          {/* Only the first account option kept */}
           <button
             type="button"
             className="google-account-item"
-            onClick={() => selectAccount('Ayush Kumar Kushwaha', 'ayush07hal@gmail.com')}
+            onClick={selectFirstAccount}
           >
             <Avatar name="Ayush Kumar Kushwaha" size={42} />
             <div>
@@ -216,54 +157,6 @@ export default function SocialButtons({ onSignedIn }) {
               <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>ayush07hal@gmail.com</div>
             </div>
           </button>
-
-          <button
-            type="button"
-            className="google-account-item"
-            onClick={() => selectAccount('Demo Google Reviewer', 'demo.reviewer@gmail.com')}
-          >
-            <Avatar name="Demo Google Reviewer" size={42} />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>Demo Google Reviewer</div>
-              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>demo.reviewer@gmail.com</div>
-            </div>
-          </button>
-
-          <p className="auth-divider"><span>or sign in with another Google email</span></p>
-
-          <form onSubmit={handleCustomSubmit} className="stack">
-            <div className="field">
-              <label className="field-label" htmlFor="g-name">Your Name</label>
-              <input
-                id="g-name"
-                type="text"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="e.g. Ayush Kumar"
-              />
-            </div>
-            <div className="field">
-              <label className="field-label" htmlFor="g-email">Google Email</label>
-              <input
-                id="g-email"
-                type="email"
-                required
-                value={customEmail}
-                onChange={(e) => setCustomEmail(e.target.value)}
-                placeholder="name@gmail.com"
-              />
-            </div>
-            <Button type="submit" size="md" block>Sign in with Google</Button>
-          </form>
-
-          <div className="google-modal-note" style={{ background: 'var(--surface-light)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)' }}>
-              ⚙️ Google Cloud Console Origin Setup:
-            </p>
-            <p style={{ margin: 0 }}>
-              To enable live popup authentication for localhost, make sure <code>http://localhost:5173</code> is listed under <strong>Authorized JavaScript origins</strong> in your Google Cloud Console OAuth Client settings.
-            </p>
-          </div>
         </div>
       </Modal>
     </>
